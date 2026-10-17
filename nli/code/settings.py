@@ -4,7 +4,7 @@ Settings
 
 import os
 
-CUDA = True
+CUDA = False
 ALPHA = None  # Use "None" to use ReLU threshold (i.e., > 0)
 BEAM_SIZE = 10
 MAX_FORMULA_LENGTH = 5
@@ -51,5 +51,7 @@ if "MTDISSECT_METRIC" in os.environ:
 mbase = os.path.splitext(os.path.basename(MODEL))[0]
 dbase = os.path.splitext(os.path.basename(DATA))[0]
 RESULT = f"exp/{dbase}-{mbase}-sentence-{MAX_FORMULA_LENGTH}{'-shuffled' if SHUFFLE else ''}{'-debug' if DEBUG else ''}{f'-{METRIC}' if METRIC != 'iou' else ''}{f'-random-weights' if RANDOM_WEIGHTS else ''}"
+
+RESULT = "exp/bowman-all"
 
 print(RESULT)

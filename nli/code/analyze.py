@@ -8,10 +8,10 @@ import os
 from collections import Counter, defaultdict
 
 import numpy as np
-import onmt.opts as opts
+#import onmt.opts as opts
 import pandas as pd
 import torch
-from onmt.utils.parse import ArgumentParser
+#from onmt.utils.parse import ArgumentParser
 from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -28,6 +28,14 @@ import data.analysis
 
 
 GLOBALS = {}
+
+
+def init_worker(acts, states, feats, dataset):
+    """Populate GLOBALS in each worker process (needed under spawn, e.g. macOS)."""
+    GLOBALS["acts"] = acts
+    GLOBALS["states"] = states
+    GLOBALS["feats"] = feats
+    GLOBALS["dataset"] = dataset
 
 
 def save_with_acts(preds, acts, fname):
@@ -512,7 +520,11 @@ def search_feats(acts, states, feats, weights, dataset):
         pool_cls = mp.Pool
 
     n_done = 0
-    with pool_cls(settings.PARALLEL) as pool, tqdm(
+    with pool_cls(
+        settings.PARALLEL,
+        initializer=init_worker,
+        initargs=(acts, states, feats[0], feats[1]),
+    ) as pool, tqdm(
         total=len(units), desc="Units"
     ) as pbar:
         for res in pool.imap_unordered(ioufunc, mp_args):
@@ -654,7 +666,7 @@ def to_sentence(toks, feats, dataset, tok_feats_vocab=None):
         }
 
     # Binary mask - encoder/decoder
-    token_masks = np.zeros((len(toks), len(tok_feats_vocab["stoi"])), dtype=np.bool)
+    token_masks = np.zeros((len(toks), len(tok_feats_vocab["stoi"])), dtype=bool)
     for i, (encu, decu, enctagu, dectagu, oth) in enumerate(
         zip(
             encoder_uniques,
